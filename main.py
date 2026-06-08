@@ -135,10 +135,12 @@ async def results(request: Request, image_id: str):
     ts = datetime.fromisoformat(data["timestamp"]).strftime("%d.%m.%Y %H:%M:%S")
 
     class_counts: dict[str, int] = {}
+    class_display_map: dict[str, str] = {}  # English name → localised display name
     total_conf = 0.0
     for det in data["detections"]:
         cls = det["class"]
         class_counts[cls] = class_counts.get(cls, 0) + 1
+        class_display_map[cls] = det.get("display", cls)
         total_conf += det["confidence"]
 
     avg_confidence = (
@@ -152,6 +154,7 @@ async def results(request: Request, image_id: str):
             "data": data,
             "timestamp": ts,
             "class_counts": class_counts,
+            "class_display_map": class_display_map,
             "avg_confidence": avg_confidence,
         },
     )

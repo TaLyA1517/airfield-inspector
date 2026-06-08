@@ -91,7 +91,7 @@
                                 {% for cls, cnt in class_counts.items() %}
                                 <div class="class-row">
                                     <span class="cdot cdot-{{ cls }}"></span>
-                                    <span class="class-name">{{ cls }}</span>
+                                    <span class="class-name">{{ class_display_map[cls] }}</span>
                                     <span class="class-cnt">{{ cnt }}</span>
                                 </div>
                                 {% endfor %}
@@ -127,7 +127,7 @@
                                 <tr>
                                     <td class="td-num">{{ loop.index }}</td>
                                     <td>
-                                        <span class="cbadge cbadge-{{ det.class }}">{{ det.class }}</span>
+                                        <span class="cbadge cbadge-{{ det.class }}">{{ det.display | default(det.class) }}</span>
                                     </td>
                                     <td>
                                         <div class="conf-bar">
