@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИСППР-АП — История анализов</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-text">ИСППР-АП</span>
+                <span class="logo-sub">Система инспекции аэродромного покрытия</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-link">Анализ</a>
+                <a href="/history" class="nav-link active">История</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== Main ===== -->
+    <main class="main">
+        <div class="container">
+
+            <div class="page-title">
+                <h1>История анализов</h1>
+                <p class="subtitle">
+                    {% if history %}
+                        Последние {{ history | length }} проанализированных изображений
+                    {% else %}
+                        Нет сохранённых результатов
+                    {% endif %}
+                </p>
+            </div>
+
+            {% if history %}
+            <div class="history-grid">
+                {% for item in history %}
+                <div class="hcard">
+                    <div class="hcard-thumb">
+                        <img src="/results_img/{{ item.id }}{{ item.ext }}"
+                             alt="{{ item.filename }}" loading="lazy">
+                        <span class="badge badge-{{ item.condition | lower }}">
+                            {% if item.condition == 'NORM' %}🟢&nbsp;НОРМА
+                            {% elif item.condition == 'WARNING' %}🟡&nbsp;ПРЕДУПР.
+                            {% else %}🔴&nbsp;КРИТИЧНО{% endif %}
+                        </span>
+                    </div>
+                    <div class="hcard-body">
+                        <div class="hcard-name" title="{{ item.filename }}">{{ item.filename }}</div>
+                        <div class="hcard-date">{{ item.ts_display }}</div>
+                        <a href="/results/{{ item.id }}" class="btn btn-sm btn-outline">Просмотр</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="empty-state empty-large">
+                <div class="empty-icon">📁</div>
+                <p class="empty-title">История пуста</p>
+                <p class="empty-desc">Загрузите изображение для начала работы</p>
+                <a href="/" class="btn btn-primary" style="margin-top:16px">Загрузить изображение</a>
+            </div>
+            {% endif %}
+
+        </div><!-- /container -->
+    </main>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="container">
+            ИСППР-АП — Интеллектуальная система поддержки принятия решений — Аэродромное покрытие
+        </div>
+    </footer>
+</body>
+</html>

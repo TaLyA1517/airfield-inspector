@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИСППР-АП — Результаты анализа</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-text">ИСППР-АП</span>
+                <span class="logo-sub">Система инспекции аэродромного покрытия</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-link">Анализ</a>
+                <a href="/history" class="nav-link">История</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== Main ===== -->
+    <main class="main">
+        <div class="container">
+
+            <!-- Page header row -->
+            <div class="results-header">
+                <div>
+                    <h1>Результаты анализа</h1>
+                    <p class="subtitle">{{ data.original_filename }} &middot; {{ timestamp }}</p>
+                </div>
+                <div class="results-actions">
+                    <a href="/report/{{ data.id }}" class="btn btn-outline" target="_blank">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        Скачать PDF
+                    </a>
+                    <a href="/" class="btn btn-secondary">← Новый анализ</a>
+                </div>
+            </div>
+
+            <!-- Condition banner -->
+            <div class="condition-banner condition-{{ data.condition | lower }}">
+                {% if data.condition == 'NORM' %}
+                    🟢 <strong>НОРМА</strong> — серьёзных дефектов не обнаружено
+                {% elif data.condition == 'WARNING' %}
+                    🟡 <strong>ПРЕДУПРЕЖДЕНИЕ</strong> — обнаружены посторонние предметы (FOD) на покрытии
+                {% else %}
+                    🔴 <strong>КРИТИЧНО</strong> — обнаружено более 3 трещин/выбоин, требуется срочный ремонт
+                {% endif %}
+            </div>
+
+            <!-- Two-column: image + stats -->
+            <div class="results-grid">
+
+                <!-- Annotated image -->
+                <div class="card">
+                    <div class="card-header">Аннотированное изображение</div>
+                    <div class="card-img-wrap">
+                        <img src="/results_img/{{ data.id }}{{ data.ext }}"
+                             alt="Результат анализа" class="result-image">
+                    </div>
+                </div>
+
+                <!-- Stats sidebar -->
+                <div class="stats-col">
+                    <div class="card stat-card">
+                        <div class="stat-value">{{ data.detections | length }}</div>
+                        <div class="stat-label">Объектов обнаружено</div>
+                    </div>
+
+                    {% if data.detections %}
+                    <div class="card stat-card">
+                        <div class="stat-value">{{ avg_confidence }}%</div>
+                        <div class="stat-label">Средняя уверенность</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="card">
+                        <div class="card-header">По классам</div>
+                        <div class="card-body">
+                            {% if class_counts %}
+                                {% for cls, cnt in class_counts.items() %}
+                                <div class="class-row">
+                                    <span class="cdot cdot-{{ cls }}"></span>
+                                    <span class="class-name">{{ cls }}</span>
+                                    <span class="class-cnt">{{ cnt }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="no-data">Нет данных</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /results-grid -->
+
+            <!-- Detection table -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">Таблица обнаружений</div>
+                <div class="card-body p0">
+                    {% if data.detections %}
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Класс</th>
+                                    <th>Уверенность</th>
+                                    <th>x1</th>
+                                    <th>y1</th>
+                                    <th>x2</th>
+                                    <th>y2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for det in data.detections %}
+                                <tr>
+                                    <td class="td-num">{{ loop.index }}</td>
+                                    <td>
+                                        <span class="cbadge cbadge-{{ det.class }}">{{ det.class }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="conf-bar">
+                                            <div class="conf-fill" style="width:{{ det.confidence }}%"></div>
+                                            <span class="conf-text">{{ det.confidence }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ det.bbox[0] }}</td>
+                                    <td>{{ det.bbox[1] }}</td>
+                                    <td>{{ det.bbox[2] }}</td>
+                                    <td>{{ det.bbox[3] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <p>Объекты не обнаружены на данном изображении</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div><!-- /container -->
+    </main>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="container">
+            ИСППР-АП — Интеллектуальная система поддержки принятия решений — Аэродромное покрытие
+        </div>
+    </footer>
+</body>
+</html>
