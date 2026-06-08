@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 
 import aiofiles
-import cv2
 from fastapi import FastAPI, File, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -95,7 +94,7 @@ async def upload(request: Request, file: UploadFile = File(...)):
             status_code=500,
         )
 
-    cv2.imwrite(str(result_img_path), annotated_img)
+    annotated_img.save(str(result_img_path))
 
     condition = get_condition(detections)
     timestamp = datetime.now().isoformat()

@@ -1,19 +1,20 @@
-import cv2
-import numpy as np
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
 from ultralytics import YOLO
 
 MODEL_PATH = "yolo11m.pt"
 
-# BGR color mapping for each defect/object class
-CLASS_COLORS_BGR: dict[str, tuple[int, int, int]] = {
-    "crack":          (0, 0, 255),       # red
-    "pothole":        (0, 0, 255),       # red
-    "spalling":       (0, 165, 255),     # orange
-    "patch":          (0, 255, 255),     # yellow
-    "fod":            (128, 0, 128),     # purple
-    "marking_damage": (0, 255, 255),     # yellow
+# RGB color mapping for each defect/object class
+CLASS_COLORS_RGB: dict[str, tuple[int, int, int]] = {
+    "crack":          (255, 0, 0),     # red
+    "pothole":        (255, 0, 0),     # red
+    "spalling":       (255, 165, 0),   # orange
+    "patch":          (255, 255, 0),   # yellow
+    "fod":            (128, 0, 128),   # purple
+    "marking_damage": (255, 255, 0),   # yellow
 }
-DEFAULT_COLOR_BGR: tuple[int, int, int] = (255, 0, 0)  # blue — all other classes
+DEFAULT_COLOR_RGB: tuple[int, int, int] = (0, 0, 255)  # blue — all other classes
 
 _model: YOLO | None = None
 
@@ -27,7 +28,29 @@ def _get_model() -> YOLO:
 
 
 def _box_color(class_name: str) -> tuple[int, int, int]:
-    return CLASS_COLORS_BGR.get(class_name.lower(), DEFAULT_COLOR_BGR)
+    return CLASS_COLORS_RGB.get(class_name.lower(), DEFAULT_COLOR_RGB)
+
+
+def _get_font(size: int = 14) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Return a PIL font, trying common system TTF paths before the built-in default."""
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+    ]
+    for path in candidates:
+        if Path(path).exists():
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:
+                pass
+    # Pillow >= 10 accepts a size parameter on load_default
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:
+        return ImageFont.load_default()
 
 
 def get_condition(detections: list[dict]) -> str:
@@ -43,14 +66,16 @@ def get_condition(detections: list[dict]) -> str:
     return "NORM"
 
 
-def run_detection(image_path: str) -> tuple[list[dict], np.ndarray]:
-    """Run YOLOv11 inference, annotate the image, and return detections + annotated array."""
+def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
+    """Run YOLOv11 inference, annotate the image, and return detections + annotated PIL Image."""
     model = _get_model()
-    img = cv2.imread(image_path)
+    img = Image.open(image_path).convert("RGB")
 
-    results = model(img, verbose=False)[0]
+    # Pass the file path so Ultralytics uses its own loader
+    results = model(image_path, verbose=False)[0]
+    draw = ImageDraw.Draw(img)
+    font = _get_font(14)
     detections: list[dict] = []
-    annotated = img.copy()
 
     for box in results.boxes:
         cls_id = int(box.cls[0])
@@ -59,16 +84,17 @@ def run_detection(image_path: str) -> tuple[list[dict], np.ndarray]:
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
 
         color = _box_color(class_name)
-
-        # Draw filled label background then border box
         label = f"{class_name} {confidence:.0%}"
-        (tw, th), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
-        cv2.rectangle(annotated, (x1, y1 - th - 10), (x1 + tw + 6, y1), color, -1)
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(
-            annotated, label, (x1 + 3, y1 - 4),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA,
-        )
+
+        # Bounding box outline
+        draw.rectangle([(x1, y1), (x2, y2)], outline=color, width=2)
+
+        # Filled label chip above the box
+        lb = draw.textbbox((0, 0), label, font=font)
+        tw, th = lb[2] - lb[0], lb[3] - lb[1]
+        ly = max(0, y1 - th - 6)
+        draw.rectangle([(x1, ly), (x1 + tw + 6, ly + th + 4)], fill=color)
+        draw.text((x1 + 3, ly + 2), label, fill=(255, 255, 255), font=font)
 
         detections.append({
             "class": class_name,
@@ -76,4 +102,4 @@ def run_detection(image_path: str) -> tuple[list[dict], np.ndarray]:
             "bbox": [x1, y1, x2, y2],
         })
 
-    return detections, annotated
+    return detections, img
