@@ -1,14 +1,17 @@
-import base64
-import os
+import urllib.request
 from pathlib import Path
 
-import requests
 from PIL import Image, ImageDraw, ImageFont
+from ultralytics import YOLO
 
-# Roboflow hosted-inference endpoint.
-# Full model reference: road-damage-detection-r9ekt/1
-ROBOFLOW_API_BASE = "https://detect.roboflow.com"
-ROBOFLOW_MODEL = "road-damage-detection-r9ekt/1"
+# Primary weights: downloaded from HuggingFace on first run
+CUSTOM_WEIGHTS_PATH = "best.pt"
+CUSTOM_WEIGHTS_URL = (
+    "https://huggingface.co/keremberke/yolov8m-pothole-detection"
+    "/resolve/main/best.pt"
+)
+# Used when the HuggingFace download fails or the file cannot be loaded
+FALLBACK_MODEL = "yolo11m.pt"
 
 # Russian display names shown in the UI and on bounding-box labels
 CLASS_DISPLAY_NAMES: dict[str, str] = {
@@ -16,7 +19,7 @@ CLASS_DISPLAY_NAMES: dict[str, str] = {
     "pothole": "Выбоина",
 }
 
-# RGB box colours keyed by the English class name returned by the API
+# RGB box colours keyed by English class name
 CLASS_COLORS_RGB: dict[str, tuple[int, int, int]] = {
     "crack":          (255, 0, 0),     # red
     "pothole":        (255, 0, 0),     # red
@@ -27,12 +30,43 @@ CLASS_COLORS_RGB: dict[str, tuple[int, int, int]] = {
 }
 DEFAULT_COLOR_RGB: tuple[int, int, int] = (0, 0, 255)  # blue — all other classes
 
+_model: YOLO | None = None
 
-def _get_api_key() -> str:
-    key = os.environ.get("ROBOFLOW_API_KEY", "")
-    if not key:
-        raise RuntimeError("ROBOFLOW_API_KEY environment variable is not set")
-    return key
+
+def _download_weights() -> bool:
+    """Download CUSTOM_WEIGHTS_URL to CUSTOM_WEIGHTS_PATH. Returns True on success."""
+    dest = Path(CUSTOM_WEIGHTS_PATH)
+    try:
+        print(f"Downloading weights from {CUSTOM_WEIGHTS_URL} …")
+        urllib.request.urlretrieve(CUSTOM_WEIGHTS_URL, str(dest))
+        return True
+    except Exception as exc:
+        print(f"Weight download failed: {exc}")
+        dest.unlink(missing_ok=True)  # remove any partial file
+        return False
+
+
+def _load_model() -> YOLO:
+    """Load custom weights, downloading them first if absent; fall back to FALLBACK_MODEL."""
+    if not Path(CUSTOM_WEIGHTS_PATH).exists():
+        _download_weights()
+
+    if Path(CUSTOM_WEIGHTS_PATH).exists():
+        try:
+            return YOLO(CUSTOM_WEIGHTS_PATH)
+        except Exception as exc:
+            print(f"Failed to load {CUSTOM_WEIGHTS_PATH}: {exc}")
+            Path(CUSTOM_WEIGHTS_PATH).unlink(missing_ok=True)
+
+    print(f"Falling back to {FALLBACK_MODEL}")
+    return YOLO(FALLBACK_MODEL)
+
+
+def _get_model() -> YOLO:
+    global _model
+    if _model is None:
+        _model = _load_model()
+    return _model
 
 
 def _box_color(class_name: str) -> tuple[int, int, int]:
@@ -62,7 +96,7 @@ def _get_font(size: int = 14) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
 
 
 def get_condition(detections: list[dict]) -> str:
-    """Return overall pavement condition based on English class names from the API."""
+    """Return overall pavement condition based on detected classes."""
     fod_count = sum(1 for d in detections if "fod" in d["class"].lower())
     crack_pothole_count = sum(
         1 for d in detections if d["class"].lower() in {"crack", "pothole"}
@@ -75,7 +109,7 @@ def get_condition(detections: list[dict]) -> str:
 
 
 def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
-    """Call Roboflow Inference API, draw annotated boxes, return detections + PIL Image.
+    """Run local YOLO inference, draw annotated boxes, return detections + PIL Image.
 
     Each detection dict contains:
         class       — English class name (used for CSS colour classes and condition logic)
@@ -83,36 +117,19 @@ def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
         confidence  — float 0-100
         bbox        — [x1, y1, x2, y2] in pixel coordinates
     """
-    api_key = _get_api_key()
+    model = _get_model()
     img = Image.open(image_path).convert("RGB")
 
-    # Roboflow hosted inference accepts raw base64-encoded image bytes
-    with open(image_path, "rb") as fh:
-        img_b64 = base64.b64encode(fh.read()).decode("utf-8")
-
-    resp = requests.post(
-        f"{ROBOFLOW_API_BASE}/{ROBOFLOW_MODEL}",
-        params={"api_key": api_key},
-        data=img_b64,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    predictions = resp.json().get("predictions", [])
-
+    results = model(image_path, verbose=False)[0]
     draw = ImageDraw.Draw(img)
     font = _get_font(14)
     detections: list[dict] = []
 
-    for pred in predictions:
-        class_name: str = pred["class"]
-        confidence = float(pred["confidence"])
-
-        # Roboflow returns centre-point + dimensions; convert to corner coords
-        cx, cy = float(pred["x"]), float(pred["y"])
-        w, h = float(pred["width"]), float(pred["height"])
-        x1, y1 = int(cx - w / 2), int(cy - h / 2)
-        x2, y2 = int(cx + w / 2), int(cy + h / 2)
+    for box in results.boxes:
+        cls_id = int(box.cls[0])
+        class_name: str = model.names[cls_id]
+        confidence = float(box.conf[0])
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
 
         color = _box_color(class_name)
         display_name = CLASS_DISPLAY_NAMES.get(class_name.lower(), class_name)
