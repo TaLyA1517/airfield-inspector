@@ -47,8 +47,24 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 ### 2. Install dependencies
 
+Ultralytics pulls in `opencv-python` (the GUI build) as a transitive dependency,
+which requires `libGL` and fails in headless/server environments (Codespaces, Docker, CI).
+The fix is to install `opencv-python-headless` first, then install ultralytics without
+letting pip override it with the GUI build:
+
+```bash
+pip install opencv-python-headless==4.10.0.84
+pip install -r requirements.txt --no-deps ultralytics==8.3.0
+pip install fastapi==0.115.0 "uvicorn[standard]==0.30.6" jinja2==3.1.4 \
+    python-multipart==0.0.12 Pillow==10.4.0 reportlab==4.2.2 aiofiles==24.1.0
+```
+
+**Simpler one-liner** (works when `opencv-python` is not yet installed):
+
 ```bash
 pip install -r requirements.txt
+# If the above pulled in opencv-python instead of the headless build:
+pip uninstall -y opencv-python && pip install opencv-python-headless==4.10.0.84
 ```
 
 > On first run the `yolo11m.pt` weights (~40 MB) are downloaded automatically.
