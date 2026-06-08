@@ -6,9 +6,9 @@ import requests
 from PIL import Image, ImageDraw, ImageFont
 
 # Roboflow hosted-inference endpoint.
-# Full model reference: road-damage-detection-n2xkq/crack-and-pothole-bftyl/1
+# Full model reference: road-damage-detection-r9ekt/1
 ROBOFLOW_API_BASE = "https://detect.roboflow.com"
-ROBOFLOW_MODEL = "crack-and-pothole-bftyl/1"
+ROBOFLOW_MODEL = "road-damage-detection-r9ekt/1"
 
 # Russian display names shown in the UI and on bounding-box labels
 CLASS_DISPLAY_NAMES: dict[str, str] = {
