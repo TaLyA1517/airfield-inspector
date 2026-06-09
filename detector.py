@@ -101,11 +101,13 @@ def get_condition(detections: list[dict]) -> str:
     crack_pothole_count = sum(
         1 for d in detections if d["class"].lower() in {"crack", "pothole"}
     )
+    if crack_pothole_count == 0 and fod_count == 0:
+        return "NORM"
     if crack_pothole_count > 3:
         return "CRITICAL"
     if fod_count > 0:
         return "WARNING"
-    return "NORM"
+    return "WARNING"
 
 
 def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
@@ -120,10 +122,11 @@ def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
     model = _get_model()
     img = Image.open(image_path).convert("RGB")
 
-    results = model(image_path, verbose=False)[0]
+    results = model(image_path, conf=0.15, verbose=False)[0]
     draw = ImageDraw.Draw(img)
-    font = _get_font(14)
+    font = _get_font(28)
     detections: list[dict] = []
+    _counter = [0]  # detection counter
 
     for box in results.boxes:
         cls_id = int(box.cls[0])
@@ -133,7 +136,7 @@ def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
 
         color = _box_color(class_name)
         display_name = CLASS_DISPLAY_NAMES.get(class_name.lower(), class_name)
-        label = f"{display_name} {confidence:.0%}"
+        _counter[0] += 1; label = f"#{_counter[0]} {display_name} {confidence:.0%}"
 
         # Bounding box outline
         draw.rectangle([(x1, y1), (x2, y2)], outline=color, width=2)

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "54409f29-b3ea-4781-ba59-3a108112653c",
+    "filename": "20170804_gaf_u40_769.jpg",
+    "ext": ".jpg",
+    "condition": "NORM",
+    "timestamp": "2026-06-09T06:37:48.537037"
+  },
+  {
+    "id": "fe5117e8-d147-4fd4-92aa-adb1af9271df",
+    "filename": "photo_148881.jpg",
+    "ext": ".jpg",
+    "condition": "WARNING",
+    "timestamp": "2026-06-09T06:37:28.570114"
+  },
+  {
+    "id": "62da69da-142e-4448-b8a6-ca2f9d72b10a",
+    "filename": "hN6yhKRwoeIhtNQGcRTVEe-Bo9MH_MZHQTZEnXPwSS96ZXZMKYKcKL6dFG919CAqyZzIpPR1W3lidUEMDY8pUf9h.jpg",
+    "ext": ".jpg",
+    "condition": "CRITICAL",
+    "timestamp": "2026-06-08T21:11:05.228766"
+  },
+  {
+    "id": "bd75dd8f-1c1b-4ad6-b13c-ae213182dec4",
+    "filename": "Yv1wmwkJqlwPYrpyRPwcz8XA7TbHLqk9Bq26JNK4e3NnsV5ZKyC5NLVPElXlq9hp2J4dBxe1DA4aR333EVrxUXWA.jpg",
+    "ext": ".jpg",
+    "condition": "CRITICAL",
+    "timestamp": "2026-06-08T21:10:48.748217"
+  },
+  {
+    "id": "f5490174-a3d8-4fe3-9c04-4fc8cad7ffd8",
+    "filename": "150.jpg",
+    "ext": ".jpg",
+    "condition": "CRITICAL",
+    "timestamp": "2026-06-08T21:10:15.801094"
+  },
+  {
+    "id": "8c4e8ab5-ff53-477b-9238-90389738a82b",
+    "filename": "150.jpg",
+    "ext": ".jpg",
+    "condition": "CRITICAL",
+    "timestamp": "2026-06-08T21:03:51.720848"
+  },
+  {
+    "id": "5749b46c-8325-452b-b63b-740bae9c112f",
+    "filename": "G1kbaJ8LyxdLJgByBrJ4NXuC2ua9PBMXSylGrkWu7njG0CYBwMA9xVwTCydA1bGAYcr6DzCOlm4cyQhLAxyFenA1.jpg",
+    "ext": ".jpg",
+    "condition": "CRITICAL",
+    "timestamp": "2026-06-08T20:35:58.242124"
+  },
+  {
+    "id": "fbd42fc8-2409-4723-b6c3-cee06f901c63",
+    "filename": "150.jpg",
+    "ext": ".jpg",
+    "condition": "NORM",
+    "timestamp": "2026-06-08T20:35:42.129789"
+  },
+  {
+    "id": "9ab95441-ccff-454c-964b-aad48701b60e",
+    "filename": "150.jpg",
+    "ext": ".jpg",
+    "condition": "NORM",
+    "timestamp": "2026-06-08T20:34:13.522151"
+  },
+  {
+    "id": "0c58e0b9-f8f0-4ecb-9733-8c91b0a31fea",
+    "filename": "Yv1wmwkJqlwPYrpyRPwcz8XA7TbHLqk9Bq26JNK4e3NnsV5ZKyC5NLVPElXlq9hp2J4dBxe1DA4aR333EVrxUXWA.jpg",
+    "ext": ".jpg",
+    "condition": "NORM",
+    "timestamp": "2026-06-08T20:28:38.345099"
+  }
+]
