@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИСППР-АП — Загрузка изображения</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-text">ИСППР-АП</span>
+                <span class="logo-sub">Система инспекции аэродромного покрытия</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-link active">Анализ</a>
+                <a href="/history" class="nav-link">История</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== Main ===== -->
+    <main class="main">
+        <div class="container">
+
+            <div class="page-title">
+                <h1>Загрузка изображения</h1>
+                <p class="subtitle">Загрузите фотографию аэродромного покрытия для автоматического обнаружения дефектов и посторонних предметов</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
+
+            <!-- Upload card -->
+            <div class="upload-card">
+                <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="drop-zone" id="dropZone">
+                        <!-- Empty-state content -->
+                        <div class="drop-zone-content" id="dropContent">
+                            <div class="drop-icon">
+                                <svg width="52" height="52" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                            </div>
+                            <p class="drop-title">Перетащите изображение сюда</p>
+                            <p class="drop-or">— или —</p>
+                            <label class="btn btn-outline" for="fileInput">Выбрать файл</label>
+                            <input type="file" id="fileInput" name="file"
+                                   accept=".jpg,.jpeg,.png" style="display:none">
+                            <p class="drop-hint">Поддерживаемые форматы: JPG, PNG · Максимум 20 МБ</p>
+                        </div>
+
+                        <!-- Preview state -->
+                        <div class="drop-preview" id="dropPreview" style="display:none">
+                            <img id="previewImg" src="" alt="Предпросмотр">
+                            <div class="preview-bar">
+                                <span id="previewName" class="preview-name"></span>
+                                <button type="button" class="btn-remove" id="clearBtn" title="Удалить">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="upload-footer">
+                        <button type="submit" class="btn btn-primary btn-lg"
+                                id="submitBtn" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            Запустить анализ
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Detection legend -->
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#ef4444"></span>
+                    <div>
+                        <div class="legend-title">Трещины и выбоины</div>
+                        <div class="legend-sub">crack · pothole</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#f97316"></span>
+                    <div>
+                        <div class="legend-title">Шелушение покрытия</div>
+                        <div class="legend-sub">spalling</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#eab308"></span>
+                    <div>
+                        <div class="legend-title">Заплатки / Маркировка</div>
+                        <div class="legend-sub">patch · marking_damage</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#a855f7"></span>
+                    <div>
+                        <div class="legend-title">Посторонние предметы (FOD)</div>
+                        <div class="legend-sub">fod</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#3b82f6"></span>
+                    <div>
+                        <div class="legend-title">Прочие объекты</div>
+                        <div class="legend-sub">другие классы</div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /container -->
+    </main>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="container">
+            ИСППР-АП — Интеллектуальная система поддержки принятия решений — Аэродромное покрытие
+        </div>
+    </footer>
+
+    <!-- ===== Loading overlay ===== -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none">
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p class="loading-title">Выполняется анализ изображения…</p>
+            <p class="loading-sub">Это может занять несколько секунд</p>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const dropZone   = document.getElementById('dropZone');
+        const fileInput  = document.getElementById('fileInput');
+        const dropContent = document.getElementById('dropContent');
+        const dropPreview = document.getElementById('dropPreview');
+        const previewImg  = document.getElementById('previewImg');
+        const previewName = document.getElementById('previewName');
+        const submitBtn   = document.getElementById('submitBtn');
+        const clearBtn    = document.getElementById('clearBtn');
+        const uploadForm  = document.getElementById('uploadForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        function showPreview(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewImg.src = e.target.result;
+                previewName.textContent = file.name;
+                dropContent.style.display = 'none';
+                dropPreview.style.display = 'flex';
+                submitBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        fileInput.addEventListener('change', function (e) {
+            showPreview(e.target.files[0]);
+        });
+
+        clearBtn.addEventListener('click', function () {
+            fileInput.value = '';
+            dropContent.style.display = 'flex';
+            dropPreview.style.display = 'none';
+            submitBtn.disabled = true;
+        });
+
+        dropZone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', function (e) {
+            if (!dropZone.contains(e.relatedTarget)) {
+                dropZone.classList.remove('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                showPreview(file);
+            }
+        });
+
+        uploadForm.addEventListener('submit', function () {
+            loadingOverlay.style.display = 'flex';
+        });
+    })();
+    </script>
+</body>
+</html>
