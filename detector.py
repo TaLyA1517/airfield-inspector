@@ -7,8 +7,8 @@ from ultralytics import YOLO
 # Primary weights: downloaded from HuggingFace on first run
 CUSTOM_WEIGHTS_PATH = "best.pt"
 CUSTOM_WEIGHTS_URL = (
-    "https://huggingface.co/keremberke/yolov8m-pothole-detection"
-    "/resolve/main/best.pt"
+    "https://huggingface.co/OpenSistemas/YOLOv8-crack-seg"
+    "/resolve/main/yolov8m/weights/best.pt"
 )
 # Used when the HuggingFace download fails or the file cannot be loaded
 FALLBACK_MODEL = "yolo11m.pt"
