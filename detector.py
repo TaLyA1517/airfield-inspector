@@ -125,7 +125,7 @@ def run_detection(image_path: str) -> tuple[list[dict], Image.Image]:
 
     results = model(image_path, conf=0.15, verbose=False)[0]
     draw = ImageDraw.Draw(img)
-    font = _get_font(28)
+    font = _get_font(20)
     detections: list[dict] = []
     _counter = [0]  # detection counter
 
