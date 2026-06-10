@@ -77,10 +77,11 @@ def _get_font(size: int = 14) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Return a PIL font, trying common system TTF paths before the built-in default."""
     candidates = [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-        "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
     ]
     for path in candidates:
         if Path(path).exists():
